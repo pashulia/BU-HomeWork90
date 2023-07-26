@@ -30,19 +30,19 @@ contract DAO {
     // инерфейс привязаный к токену управления
     IERC20 govToken;
     // время на одно голосования
-    uint256 time;
-    address owner;
-    address dao;
+    uint256 public time;
+    address public owner;
+    address public dao;
 
     // депозиты
-    mapping(address => Deposit) deposits;
+    mapping(address => Deposit) public deposits;
 
     // голосования
     Proposal[] proposals;
 
     // проголосовал или нет
     // (id голосования => (адрес => да/нет))
-    mapping(uint256 => mapping(address => bool)) voters;
+    mapping(uint256 => mapping(address => bool)) public voters;
 
     event AddProposal(uint256 id);
     event FinishProposal(uint256 id, bool quorum, bool result, bool success);
@@ -55,7 +55,7 @@ contract DAO {
     }
 
     function addDeposit(uint256 _value) public {
-        require(govToken.transferFrom(msg.sender, dao, _value), "DAO: problem with deposit!");
+        require(govToken.transferFrom(msg.sender, dao, _value), "DAO: problem with addDeposit!");
         deposits[msg.sender].allToken += _value;
     }
 
@@ -67,7 +67,7 @@ contract DAO {
         }
         require(deposit.allToken - deposit.frozenToken >= _value, "DAO: not enough token!");
         deposits[msg.sender].allToken -= _value;
-        require(govToken.transfer(msg.sender, _value), "DAO: problem with withdrawDeposit!");
+        govToken.transfer(msg.sender, _value);
     }
 
     function addProposal(address _pCallAddress, bytes calldata _pCalldata) public {
@@ -91,8 +91,7 @@ contract DAO {
         Proposal memory proposal = proposals[_pId];
         require(deposit.allToken > 0, "DAO: you don't have deposit!");
         require(!voters[_pId][msg.sender], "DAO: you already voted!");
-        require(block.timestamp > proposal.pEndTime, "DAO: time isup!");
-        require(!proposal.pStatus, "DAO: proposal finished!");
+        require(block.timestamp < proposal.pEndTime, "DAO: time is up!");
 
         voters[_pId][msg.sender] = true;
 
